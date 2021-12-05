@@ -150,7 +150,7 @@ struct AppCtx_private {
 struct CeedData_private {
   CeedVector           x_coord, q_data;
   CeedQFunctionContext setup_context, dc_context, advection_context,
-                       euler_context;
+                       euler_context, shocktube_context;
   CeedQFunction        qf_setup_vol, qf_ics, qf_rhs_vol, qf_ifunction_vol,
                        qf_setup_sur, qf_apply_sur;
   CeedBasis            basis_x, basis_xc, basis_q, basis_x_sur, basis_q_sur;
@@ -215,6 +215,11 @@ struct SetupContext_ {
   CeedScalar dc_axis[3];
   CeedScalar wind[3];
   CeedScalar time;
+  CeedScalar midpt;
+  CeedScalar P_high;
+  CeedScalar rho_high;
+  CeedScalar P_low;
+  CeedScalar rho_low;
   int wind_type;              // See WindType: 0=ROTATION, 1=TRANSLATION
   int bubble_type;            // See BubbleType: 0=SPHERE, 1=CYLINDER
   int bubble_continuity_type; // See BubbleContinuityType: 0=SMOOTH, 1=BACK_SHARP 2=THICK
@@ -253,6 +258,20 @@ struct EulerContext_ {
 };
 #endif
 
+// SHOCKTUBE
+#ifndef shocktube_context_struct
+#define shocktube_context_struct
+typedef struct ShockTubeContext_ *ShockTubeContext;
+struct ShockTubeContext_ {
+  CeedScalar cv;
+  CeedScalar Cyzb;
+  CeedScalar Byzb;
+  bool implicit;
+  bool yzb;
+  int stabilization;
+};
+#endif
+
 // ADVECTION and ADVECTION2D
 #ifndef advection_context_struct
 #define advection_context_struct
@@ -270,6 +289,7 @@ struct AdvectionContext_ {
 struct Physics_private {
   DCContext            dc_ctx;
   EulerContext         euler_ctx;
+  ShockTubeContext     shocktube_ctx;
   AdvectionContext     advection_ctx;
   WindType             wind_type;
   BubbleType           bubble_type;
@@ -308,6 +328,9 @@ extern PetscErrorCode NS_DENSITY_CURRENT(ProblemData *problem, void *setup_ctx,
 extern PetscErrorCode NS_EULER_VORTEX(ProblemData *problem, void *setup_ctx,
                                       void *ctx);
 
+extern PetscErrorCode NS_SHOCKTUBE(ProblemData *problem, void *setup_ctx,
+                                   void *ctx);
+
 extern PetscErrorCode NS_ADVECTION(ProblemData *problem, void *setup_ctx,
                                    void *ctx);
 
@@ -319,6 +342,9 @@ extern PetscErrorCode SetupContext_DENSITY_CURRENT(Ceed ceed,
     CeedData ceed_data, AppCtx app_ctx, SetupContext setup_ctx, Physics phys);
 
 extern PetscErrorCode SetupContext_EULER_VORTEX(Ceed ceed, CeedData ceed_data,
+    AppCtx app_ctx, SetupContext setup_ctx, Physics phys);
+
+extern PetscErrorCode SetupContext_SHOCKTUBE(Ceed ceed, CeedData ceed_data,
     AppCtx app_ctx, SetupContext setup_ctx, Physics phys);
 
 extern PetscErrorCode SetupContext_ADVECTION(Ceed ceed, CeedData ceed_data,
@@ -334,6 +360,9 @@ extern PetscErrorCode BC_DENSITY_CURRENT(DM dm, SimpleBC bc, Physics phys,
 extern PetscErrorCode BC_EULER_VORTEX(DM dm, SimpleBC bc, Physics phys,
                                       void *setup_ctx);
 
+extern PetscErrorCode BC_SHOCKTUBE(DM dm, SimpleBC bc, Physics phys,
+                                   void *setup_ctx);
+
 extern PetscErrorCode BC_ADVECTION(DM dm, SimpleBC bc, Physics phys,
                                    void *setup_ctx);
 
@@ -346,6 +375,9 @@ extern PetscErrorCode PRINT_DENSITY_CURRENT(Physics phys,
 
 extern PetscErrorCode PRINT_EULER_VORTEX(Physics phys, SetupContext setup_ctx,
     AppCtx app_ctx);
+
+extern PetscErrorCode PRINT_SHOCKTUBE(Physics phys, SetupContext setup_ctx,
+                                      AppCtx app_ctx);
 
 extern PetscErrorCode PRINT_ADVECTION(Physics phys, SetupContext setup_ctx,
                                       AppCtx app_ctx);

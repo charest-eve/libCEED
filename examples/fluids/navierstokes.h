@@ -263,9 +263,9 @@ struct EulerContext_ {
 #define shocktube_context_struct
 typedef struct ShockTubeContext_ *ShockTubeContext;
 struct ShockTubeContext_ {
-  CeedScalar cv;
   CeedScalar Cyzb;
   CeedScalar Byzb;
+  CeedScalar c_tau;
   bool implicit;
   bool yzb;
   int stabilization;
@@ -277,9 +277,9 @@ struct ShockTubeContext_ {
 #define shocktube_context_struct
 typedef struct ShockTubeContext_ *ShockTubeContext;
 struct ShockTubeContext_ {
-  CeedScalar cv;
   CeedScalar Cyzb;
   CeedScalar Byzb;
+  CeedScalar c_tau;
   bool implicit;
   bool yzb;
   int stabilization;

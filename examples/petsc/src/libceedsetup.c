@@ -53,7 +53,7 @@ PetscErrorCode SetupLibceedByDegree(DM dm, Ceed ceed, CeedInt degree,
   CeedScalar R = 1,                      // radius of the sphere
              l = 1.0/PetscSqrtReal(3.0); // half edge of the inscribed cube
 
-  ierr = DMSetCoordinateDim(dm, topo_dim); CHKERRQ(ierr);
+  //ierr = DMSetCoordinateDim(dm, topo_dim); CHKERRQ(ierr);
   ierr = DMGetCoordinateDM(dm, &dm_coord); CHKERRQ(ierr);
 
   // CEED bases

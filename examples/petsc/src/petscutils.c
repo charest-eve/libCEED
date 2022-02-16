@@ -125,28 +125,53 @@ PetscErrorCode SetupDMByDegree(DM dm, PetscInt degree, PetscInt num_comp_u,
   PetscInt ierr, marker_ids[1] = {1};
   PetscFE fe;
   MPI_Comm comm;
+  PetscBool      is_simplex = PETSC_TRUE;
 
   PetscFunctionBeginUser;
 
+  // Check if simplex or tensor-product mesh
+  ierr = DMPlexIsSimplex(dm, &is_simplex); CHKERRQ(ierr);
   // Setup FE
   ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
-  ierr = PetscFECreateLagrange(comm, dim, num_comp_u, PETSC_FALSE, degree, degree,
+  ierr = PetscFECreateLagrange(comm, dim, num_comp_u, is_simplex, degree, degree,
                                &fe); CHKERRQ(ierr);
-  ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+  //ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   ierr = DMAddField(dm, NULL, (PetscObject)fe); CHKERRQ(ierr);
+  ierr = DMCreateDS(dm); CHKERRQ(ierr);
   {
-    /* create FE field for coordinates */
+    DM             dm_coord;
+    PetscDS        ds_coord;
+    PetscFE        fe_coord_current, fe_coord_new;
+    PetscDualSpace fe_coord_dual_space;
+    PetscInt       fe_coord_order, num_comp_coord;
+
+    ierr = DMGetCoordinateDM(dm, &dm_coord); CHKERRQ(ierr);
+    ierr = DMGetCoordinateDim(dm, &num_comp_coord); CHKERRQ(ierr);
+    ierr = DMGetRegionDS(dm_coord, NULL, NULL, &ds_coord); CHKERRQ(ierr);
+    ierr = PetscDSGetDiscretization(ds_coord, 0, (PetscObject *)&fe_coord_current); CHKERRQ(ierr);
+    ierr = PetscFEGetDualSpace(fe_coord_current, &fe_coord_dual_space); CHKERRQ(ierr);
+    ierr = PetscDualSpaceGetOrder(fe_coord_dual_space, &fe_coord_order); CHKERRQ(ierr);
+
+    // Create FE for coordinates
+    ierr = PetscFECreateLagrange(comm, dim, num_comp_coord, is_simplex, fe_coord_order, degree, &fe_coord_new);
+    CHKERRQ(ierr);
+    ierr = DMProjectCoordinates(dm, fe_coord_new); CHKERRQ(ierr);
+    ierr = PetscFEDestroy(&fe_coord_new); CHKERRQ(ierr);
+  }
+  /*
+  {
+    // create FE field for coordinates
     PetscFE fe_coords;
     PetscInt num_comp_coord;
     ierr = DMGetCoordinateDim(dm, &num_comp_coord); CHKERRQ(ierr);
-    ierr = PetscFECreateLagrange(comm, dim, num_comp_coord, PETSC_FALSE, 1, degree,
+    ierr = PetscFECreateLagrange(comm, dim, num_comp_coord, is_simplex, 1, degree,
                                  &fe_coords); CHKERRQ(ierr);
     ierr = DMProjectCoordinates(dm, fe_coords); CHKERRQ(ierr);
     ierr = PetscFEDestroy(&fe_coords); CHKERRQ(ierr);
   }
-
+  */
   // Setup DM
-  ierr = DMCreateDS(dm); CHKERRQ(ierr);
+  //ierr = DMCreateDS(dm); CHKERRQ(ierr);
   if (enforce_bc) {
     PetscBool has_label;
     DMHasLabel(dm, "marker", &has_label);
@@ -157,8 +182,13 @@ PetscErrorCode SetupDMByDegree(DM dm, PetscInt degree, PetscInt num_comp_u,
                          marker_ids, 0, 0, NULL, (void(*)(void))bc_func,
                          NULL, NULL, NULL); CHKERRQ(ierr);
   }
-  ierr = DMPlexSetClosurePermutationTensor(dm, PETSC_DETERMINE, NULL);
-  CHKERRQ(ierr);
+
+  if (!is_simplex) {
+    DM dm_coord;
+    ierr = DMGetCoordinateDM(dm, &dm_coord); CHKERRQ(ierr);
+    ierr = DMPlexSetClosurePermutationTensor(dm, PETSC_DETERMINE, NULL); CHKERRQ(ierr);
+    ierr = DMPlexSetClosurePermutationTensor(dm_coord, PETSC_DETERMINE, NULL); CHKERRQ(ierr);
+  }
   ierr = PetscFEDestroy(&fe); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -263,7 +293,6 @@ PetscErrorCode CreateBasisFromPlex(Ceed ceed, DM dm, DMLabel domain_label,
     ierr = PetscFEGetQuadrature(fe, &quadrature); CHKERRQ(ierr);
     ierr = PetscQuadratureGetData(quadrature, NULL, NULL, &Q, NULL, NULL);
     CHKERRQ(ierr);
-    printf("Q:%d\n", Q);
   }
 
   // Check if simplex or tensor-product mesh

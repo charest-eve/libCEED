@@ -416,6 +416,8 @@ static PetscErrorCode Run(RunParams rp, PetscInt num_resources,
     ierr = DMSetType(dm, DMPLEX); CHKERRQ(ierr);
     // Set Tensor elements
     ierr = PetscOptionsSetValue(NULL, "-dm_plex_simplex", "0"); CHKERRQ(ierr);
+    ierr = PetscOptionsSetValue(NULL, "-dm_plex_dim", "3"); CHKERRQ(ierr);
+    ierr = PetscOptionsSetValue(NULL, "-dm_plex_box_faces", "8"); CHKERRQ(ierr);
     // Set CL options
     ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
     ierr = DMViewFromOptions(dm, NULL, "-dm_view"); CHKERRQ(ierr);

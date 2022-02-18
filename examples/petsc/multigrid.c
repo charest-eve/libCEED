@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
     ierr = DMSetVecType(dm[i], vec_type); CHKERRQ(ierr);
     PetscInt dim;
     ierr = DMGetDimension(dm[i], &dim); CHKERRQ(ierr);
-    ierr = SetupDMByDegree(dm[i], level_degrees[i], num_comp_u, dim,
+    ierr = SetupDMByDegree(dm[i], level_degrees[i], q_extra, num_comp_u, dim,
                            bp_options[bp_choice].enforce_bc, bp_options[bp_choice].bc_func);
     CHKERRQ(ierr);
 
@@ -287,21 +287,22 @@ int main(int argc, char **argv) {
     ierr = PetscPrintf(comm,
                        "\n-- CEED Benchmark Problem %d -- libCEED + PETSc + PCMG --\n"
                        "  PETSc:\n"
-                       "    PETSc Vec Type                     : %s\n"
+                       "    PETSc Vec Type                          : %s\n"
                        "  libCEED:\n"
-                       "    libCEED Backend                    : %s\n"
-                       "    libCEED Backend MemType            : %s\n"
+                       "    libCEED Backend                         : %s\n"
+                       "    libCEED Backend MemType                 : %s\n"
                        "  Mesh:\n"
-                       "    Number of 1D Basis Nodes (p)       : %d\n"
-                       "    Number of 1D Quadrature Points (q) : %d\n"
-                       "    Global Nodes                       : %D\n"
-                       "    Owned Nodes                        : %D\n"
-                       "    DoF per node                       : %D\n"
+                       "    Number of 1D Basis Nodes (P)            : %d\n"
+                       "    Number of 1D Quadrature Points (Q)      : %d\n"
+                       "    Additional quadrature points (q_extra)  : %d\n"
+                       "    Global Nodes                            : %D\n"
+                       "    Owned Nodes                             : %D\n"
+                       "    DoF per node                            : %D\n"
                        "  Multigrid:\n"
-                       "    Number of Levels                   : %d\n",
+                       "    Number of Levels                        : %d\n",
                        bp_choice+1, vec_type, used_resource,
-                       CeedMemTypes[mem_type_backend],
-                       P, Q, g_size[fine_level]/num_comp_u, l_size[fine_level]/num_comp_u,
+                       CeedMemTypes[mem_type_backend], P, Q, q_extra,
+                       g_size[fine_level]/num_comp_u, l_size[fine_level]/num_comp_u,
                        num_comp_u, num_levels); CHKERRQ(ierr);
   }
 

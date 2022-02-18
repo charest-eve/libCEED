@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
   }
 
   // Create DM
-  ierr = SetupDMByDegree(dm, degree, num_comp_u, topo_dim, false,
+  ierr = SetupDMByDegree(dm, degree, q_extra, num_comp_u, topo_dim, false,
                          (BCFunction)NULL);
   CHKERRQ(ierr);
 
@@ -217,13 +217,14 @@ int main(int argc, char **argv) {
     ierr = PetscPrintf(comm,
                        "\n-- CEED Benchmark Problem %d on the Sphere -- libCEED + PETSc --\n"
                        "  libCEED:\n"
-                       "    libCEED Backend                    : %s\n"
-                       "    libCEED Backend MemType            : %s\n"
+                       "    libCEED Backend                         : %s\n"
+                       "    libCEED Backend MemType                 : %s\n"
                        "  Mesh:\n"
-                       "    Number of 1D Basis Nodes (p)       : %d\n"
-                       "    Number of 1D Quadrature Points (q) : %d\n"
-                       "    Global nodes                       : %D\n",
-                       bp_choice+1, ceed_resource, CeedMemTypes[mem_type_backend], P, Q,
+                       "    Number of 1D Basis Nodes (P)            : %d\n"
+                       "    Number of 1D Quadrature Points (Q)      : %d\n"
+                       "    Additional quadrature points (q_extra)  : %d\n"
+                       "    Global nodes                            : %D\n",
+                       bp_choice+1, ceed_resource, CeedMemTypes[mem_type_backend], P, Q, q_extra,
                        g_size/num_comp_u); CHKERRQ(ierr);
   }
 

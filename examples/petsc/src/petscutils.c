@@ -120,9 +120,11 @@ static PetscErrorCode CreateBCLabel(DM dm, const char name[]) {
 // -----------------------------------------------------------------------------
 // This function sets up a DM for a given degree
 // -----------------------------------------------------------------------------
-PetscErrorCode SetupDMByDegree(DM dm, PetscInt degree, PetscInt num_comp_u,
+PetscErrorCode SetupDMByDegree(DM dm, PetscInt p_degree, PetscInt q_extra,
+                               PetscInt num_comp_u,
                                PetscInt dim, bool enforce_bc, BCFunction bc_func) {
   PetscInt ierr, marker_ids[1] = {1};
+  PetscInt q_degree = p_degree + q_extra;
   PetscFE fe;
   MPI_Comm comm;
   PetscBool      is_simplex = PETSC_TRUE;
@@ -133,8 +135,8 @@ PetscErrorCode SetupDMByDegree(DM dm, PetscInt degree, PetscInt num_comp_u,
   ierr = DMPlexIsSimplex(dm, &is_simplex); CHKERRQ(ierr);
   // Setup FE
   ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
-  ierr = PetscFECreateLagrange(comm, dim, num_comp_u, is_simplex, degree, degree,
-                               &fe); CHKERRQ(ierr);
+  ierr = PetscFECreateLagrange(comm, dim, num_comp_u, is_simplex, p_degree,
+                               q_degree, &fe); CHKERRQ(ierr);
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   ierr = DMAddField(dm, NULL, (PetscObject)fe); CHKERRQ(ierr);
   ierr = DMCreateDS(dm); CHKERRQ(ierr);
@@ -144,7 +146,7 @@ PetscErrorCode SetupDMByDegree(DM dm, PetscInt degree, PetscInt num_comp_u,
     PetscFE fe_coords;
     PetscInt num_comp_coord;
     ierr = DMGetCoordinateDim(dm, &num_comp_coord); CHKERRQ(ierr);
-    ierr = PetscFECreateLagrange(comm, dim, num_comp_coord, is_simplex, 1, degree,
+    ierr = PetscFECreateLagrange(comm, dim, num_comp_coord, is_simplex, 1, q_degree,
                                  &fe_coords); CHKERRQ(ierr);
     ierr = DMProjectCoordinates(dm, fe_coords); CHKERRQ(ierr);
     ierr = PetscFEDestroy(&fe_coords); CHKERRQ(ierr);
@@ -340,5 +342,76 @@ PetscErrorCode CreateBasisFromPlex(Ceed ceed, DM dm, DMLabel domain_label,
 
   PetscFunctionReturn(0);
 };
+
+// -----------------------------------------------------------------------------
+// Utilities
+// -----------------------------------------------------------------------------
+
+// Utility function, compute three factors of an integer
+static void Split3(PetscInt size, PetscInt m[3], bool reverse) {
+  for (PetscInt d=0, size_left=size; d<3; d++) {
+    PetscInt try = (PetscInt)PetscCeilReal(PetscPowReal(size_left, 1./(3 - d)));
+    while (try * (size_left / try) != size_left) try++;
+    m[reverse ? 2-d : d] = try;
+    size_left /= try;
+  }
+}
+
+static int Max3(const PetscInt a[3]) {
+  return PetscMax(a[0], PetscMax(a[1], a[2]));
+}
+
+static int Min3(const PetscInt a[3]) {
+  return PetscMin(a[0], PetscMin(a[1], a[2]));
+}
+
+// -----------------------------------------------------------------------------
+// Create distribute dm
+// -----------------------------------------------------------------------------
+PetscErrorCode CreateDistributedDM(RunParams rp, DM *dm) {
+  PetscErrorCode   ierr;
+
+  PetscFunctionBeginUser;
+  // Setup DM
+  if (rp->read_mesh) {
+    ierr = DMPlexCreateFromFile(PETSC_COMM_WORLD, rp->filename, NULL, PETSC_TRUE,
+                                dm);
+    CHKERRQ(ierr);
+  } else {
+    if (rp->user_l_nodes) {
+      // Find a nicely composite number of elements no less than global nodes
+      PetscMPIInt size;
+      ierr = MPI_Comm_size(rp->comm, &size); CHKERRQ(ierr);
+      for (PetscInt g_elem =
+             PetscMax(1, size * rp->local_nodes / PetscPowInt(rp->degree, rp->dim));
+           ;
+           g_elem++) {
+        Split3(g_elem, rp->mesh_elem, true);
+        if (Max3(rp->mesh_elem) / Min3(rp->mesh_elem) <= 2) break;
+      }
+    }
+    ierr = DMPlexCreateBoxMesh(PETSC_COMM_WORLD, rp->dim, PETSC_FALSE,
+                               rp->mesh_elem,
+                               NULL, NULL, NULL, PETSC_TRUE, dm); CHKERRQ(ierr);
+  }
+
+  ierr = DMViewFromOptions(*dm, NULL, "-dm_view"); CHKERRQ(ierr);
+
+  {
+    DM dm_dist = NULL;
+    PetscPartitioner part;
+
+    ierr = DMPlexGetPartitioner(*dm, &part); CHKERRQ(ierr);
+    ierr = PetscPartitionerSetFromOptions(part); CHKERRQ(ierr);
+    ierr = DMPlexDistribute(*dm, 0, NULL, &dm_dist); CHKERRQ(ierr);
+    if (dm_dist) {
+      ierr = DMDestroy(dm); CHKERRQ(ierr);
+      *dm  = dm_dist;
+    }
+  }
+  // Disable default VECSTANDARD *after* distribution (which creates a Vec)
+  ierr = DMSetVecType(*dm, NULL); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 // -----------------------------------------------------------------------------

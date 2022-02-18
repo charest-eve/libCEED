@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
   }
 
   // Create DM
-  ierr = SetupDMByDegree(dm, degree, num_comp_u, topo_dim, false,
+  ierr = SetupDMByDegree(dm, degree, q_extra, num_comp_u, topo_dim, false,
                          (BCFunction)NULL);
   CHKERRQ(ierr);
 
@@ -209,15 +209,16 @@ int main(int argc, char **argv) {
     ierr = PetscPrintf(comm,
                        "\n-- libCEED + PETSc Surface Area of a Manifold --\n"
                        "  libCEED:\n"
-                       "    libCEED Backend                    : %s\n"
-                       "    libCEED Backend MemType            : %s\n"
+                       "    libCEED Backend                         : %s\n"
+                       "    libCEED Backend MemType                 : %s\n"
                        "  Mesh:\n"
-                       "    Number of 1D Basis Nodes (p)       : %d\n"
-                       "    Number of 1D Quadrature Points (q) : %d\n"
-                       "    Global nodes                       : %D\n"
-                       "    DoF per node                       : %D\n"
-                       "    Global DoFs                        : %D\n",
-                       used_resource, CeedMemTypes[mem_type_backend], P, Q,
+                       "    Number of 1D Basis Nodes (P)            : %d\n"
+                       "    Number of 1D Quadrature Points (Q)      : %d\n"
+                       "    Additional quadrature points (q_extra)  : %d\n"
+                       "    Global nodes                            : %D\n"
+                       "    DoF per node                            : %D\n"
+                       "    Global DoFs                             : %D\n",
+                       used_resource, CeedMemTypes[mem_type_backend], P, Q, q_extra,
                        g_size/num_comp_u, num_comp_u, g_size); CHKERRQ(ierr);
   }
 

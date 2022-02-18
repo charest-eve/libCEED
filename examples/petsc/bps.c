@@ -66,43 +66,6 @@ const char help[] = "Solve CEED BPs using PETSc with DMPlex\n";
 #endif
 
 // -----------------------------------------------------------------------------
-// Utilities
-// -----------------------------------------------------------------------------
-
-// Utility function, compute three factors of an integer
-static void Split3(PetscInt size, PetscInt m[3], bool reverse) {
-  for (PetscInt d=0, size_left=size; d<3; d++) {
-    PetscInt try = (PetscInt)PetscCeilReal(PetscPowReal(size_left, 1./(3 - d)));
-    while (try * (size_left / try) != size_left) try++;
-    m[reverse ? 2-d : d] = try;
-    size_left /= try;
-  }
-}
-
-static int Max3(const PetscInt a[3]) {
-  return PetscMax(a[0], PetscMax(a[1], a[2]));
-}
-
-static int Min3(const PetscInt a[3]) {
-  return PetscMin(a[0], PetscMin(a[1], a[2]));
-}
-
-// -----------------------------------------------------------------------------
-// Parameter structure for running problems
-// -----------------------------------------------------------------------------
-typedef struct RunParams_ *RunParams;
-struct RunParams_ {
-  MPI_Comm comm;
-  PetscBool test_mode, read_mesh, user_l_nodes, write_solution;
-  char *filename, *hostname;
-  PetscInt local_nodes, degree, q_extra, dim, num_comp_u, *mesh_elem;
-  PetscInt ksp_max_it_clip[2];
-  PetscMPIInt ranks_per_node;
-  BPType bp_choice;
-  PetscLogStage solve_stage;
-};
-
-// -----------------------------------------------------------------------------
 // Main body of program, called in a loop for performance benchmarking purposes
 // -----------------------------------------------------------------------------
 static PetscErrorCode RunWithDM(RunParams rp, DM dm,
@@ -181,26 +144,27 @@ static PetscErrorCode RunWithDM(RunParams rp, DM dm,
     ierr = PetscPrintf(rp->comm,
                        "\n-- CEED Benchmark Problem %d -- libCEED + PETSc --\n"
                        "  MPI:\n"
-                       "    Hostname                           : %s\n"
-                       "    Total ranks                        : %d\n"
-                       "    Ranks per compute node             : %d\n"
+                       "    Hostname                                : %s\n"
+                       "    Total ranks                             : %d\n"
+                       "    Ranks per compute node                  : %d\n"
                        "  PETSc:\n"
-                       "    PETSc Vec Type                     : %s\n"
+                       "    PETSc Vec Type                          : %s\n"
                        "  libCEED:\n"
-                       "    libCEED Backend                    : %s\n"
-                       "    libCEED Backend MemType            : %s\n"
+                       "    libCEED Backend                         : %s\n"
+                       "    libCEED Backend MemType                 : %s\n"
                        "  Mesh:\n"
-                       "    Number of 1D Basis Nodes (P)       : %d\n"
-                       "    Number of 1D Quadrature Points (Q) : %d\n"
-                       "    Global nodes                       : %D\n"
-                       "    Local Elements                     : %D\n"
-                       "    Owned nodes                        : %D\n"
-                       "    DoF per node                       : %D\n",
+                       "    Number of 1D Basis Nodes (P)            : %d\n"
+                       "    Number of 1D Quadrature Points (Q)      : %d\n"
+                       "    Additional quadrature points (q_extra)  : %d\n"
+                       "    Global nodes                            : %D\n"
+                       "    Local Elements                          : %D\n"
+                       "    Owned nodes                             : %D\n"
+                       "    DoF per node                            : %D\n",
                        rp->bp_choice+1, rp->hostname, comm_size,
                        rp->ranks_per_node, vec_type, used_resource,
                        CeedMemTypes[mem_type_backend],
-                       P, Q, g_size/rp->num_comp_u, c_end - c_start, l_size/rp->num_comp_u,
-                       rp->num_comp_u);
+                       P, Q, rp->q_extra, g_size/rp->num_comp_u, c_end - c_start,
+                       l_size/rp->num_comp_u, rp->num_comp_u);
     CHKERRQ(ierr);
   }
 
@@ -385,43 +349,7 @@ static PetscErrorCode Run(RunParams rp, PetscInt num_resources,
 
   PetscFunctionBeginUser;
   // Setup DM
-  if (rp->read_mesh) {
-    ierr = DMPlexCreateFromFile(PETSC_COMM_WORLD, rp->filename, NULL, PETSC_TRUE,
-                                &dm);
-    CHKERRQ(ierr);
-  } else {
-    if (rp->user_l_nodes) {
-      // Find a nicely composite number of elements no less than global nodes
-      PetscMPIInt size;
-      ierr = MPI_Comm_size(rp->comm, &size); CHKERRQ(ierr);
-      for (PetscInt g_elem =
-             PetscMax(1, size * rp->local_nodes / PetscPowInt(rp->degree, rp->dim));
-           ;
-           g_elem++) {
-        Split3(g_elem, rp->mesh_elem, true);
-        if (Max3(rp->mesh_elem) / Min3(rp->mesh_elem) <= 2) break;
-      }
-    }
-    ierr = DMPlexCreateBoxMesh(PETSC_COMM_WORLD, rp->dim, PETSC_FALSE,
-                               rp->mesh_elem,
-                               NULL, NULL, NULL, PETSC_TRUE, &dm); CHKERRQ(ierr);
-    ierr = DMViewFromOptions(dm, NULL, "-dm_view"); CHKERRQ(ierr);
-  }
-
-  {
-    DM dm_dist = NULL;
-    PetscPartitioner part;
-
-    ierr = DMPlexGetPartitioner(dm, &part); CHKERRQ(ierr);
-    ierr = PetscPartitionerSetFromOptions(part); CHKERRQ(ierr);
-    ierr = DMPlexDistribute(dm, 0, NULL, &dm_dist); CHKERRQ(ierr);
-    if (dm_dist) {
-      ierr = DMDestroy(&dm); CHKERRQ(ierr);
-      dm  = dm_dist;
-    }
-  }
-  // Disable default VECSTANDARD *after* distribution (which creates a Vec)
-  ierr = DMSetVecType(dm, NULL); CHKERRQ(ierr);
+  CreateDistributedDM(rp, &dm);
 
   for (PetscInt b = 0; b < num_bp_choices; b++) {
     DM dm_deg;
@@ -436,7 +364,7 @@ static PetscErrorCode Run(RunParams rp, PetscInt num_resources,
     // Create DM
     PetscInt dim;
     ierr = DMGetDimension(dm_deg, &dim); CHKERRQ(ierr);
-    ierr = SetupDMByDegree(dm_deg, rp->degree, rp->num_comp_u, dim,
+    ierr = SetupDMByDegree(dm_deg, rp->degree, q_extra, rp->num_comp_u, dim,
                            bp_options[rp->bp_choice].enforce_bc,
                            bp_options[rp->bp_choice].bc_func); CHKERRQ(ierr);
     for (PetscInt r = 0; r < num_resources; r++) {

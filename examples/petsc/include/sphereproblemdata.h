@@ -14,19 +14,13 @@
 // BP Option Data
 // -----------------------------------------------------------------------------
 
-// BP options
-typedef enum {
-  CEED_BP1 = 0, CEED_BP2 = 1, CEED_BP3 = 2,
-  CEED_BP4 = 3, CEED_BP5 = 4, CEED_BP6 = 5
-} BPType;
-
 static BPData bp_options[6] = {
   [CEED_BP1] = {
     .num_comp_u = 1,
     .num_comp_x = 3,
     .topo_dim = 3,
     .q_data_size = 1,
-    .q_extra = 1,
+    .q_extra = 0,
     .setup_geo = SetupMassGeo,
     .setup_rhs = SetupMassRhs,
     .apply = Mass,
@@ -44,7 +38,7 @@ static BPData bp_options[6] = {
     .num_comp_x = 3,
     .topo_dim = 3,
     .q_data_size = 1,
-    .q_extra = 1,
+    .q_extra = 0,
     .setup_geo = SetupMassGeo,
     .setup_rhs = SetupMassRhs3,
     .apply = Mass3,
@@ -62,7 +56,7 @@ static BPData bp_options[6] = {
     .num_comp_x = 3,
     .topo_dim = 3,
     .q_data_size = 4,
-    .q_extra = 1,
+    .q_extra = 0,
     .setup_geo = SetupDiffGeo,
     .setup_rhs = SetupDiffRhs,
     .apply = Diff,
@@ -80,7 +74,7 @@ static BPData bp_options[6] = {
     .num_comp_x = 3,
     .topo_dim = 3,
     .q_data_size = 4,
-    .q_extra = 1,
+    .q_extra = 0,
     .setup_geo = SetupDiffGeo,
     .setup_rhs = SetupDiffRhs3,
     .apply = Diff3,

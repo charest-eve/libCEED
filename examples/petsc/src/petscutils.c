@@ -138,31 +138,8 @@ PetscErrorCode SetupDMByDegree(DM dm, PetscInt degree, PetscInt num_comp_u,
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   ierr = DMAddField(dm, NULL, (PetscObject)fe); CHKERRQ(ierr);
   ierr = DMCreateDS(dm); CHKERRQ(ierr);
-  if (1) {
-    DM             dm_coord;
-    PetscDS        ds_coord;
-    PetscFE        fe_coord_current, fe_coord_new;
-    PetscDualSpace fe_coord_dual_space;
-    PetscInt       fe_coord_order, num_comp_coord;
 
-    ierr = DMGetCoordinateDM(dm, &dm_coord); CHKERRQ(ierr);
-    ierr = DMGetCoordinateDim(dm, &num_comp_coord); CHKERRQ(ierr);
-    ierr = DMGetRegionDS(dm_coord, NULL, NULL, &ds_coord); CHKERRQ(ierr);
-    ierr = PetscDSGetDiscretization(ds_coord, 0, (PetscObject *)&fe_coord_current);
-    CHKERRQ(ierr);
-    ierr = PetscFEGetDualSpace(fe_coord_current, &fe_coord_dual_space);
-    CHKERRQ(ierr);
-    ierr = PetscDualSpaceGetOrder(fe_coord_dual_space, &fe_coord_order);
-    CHKERRQ(ierr);
-
-    // Create FE for coordinates
-    ierr = PetscFECreateLagrange(comm, dim, num_comp_coord, is_simplex,
-                                 fe_coord_order, degree, &fe_coord_new);
-    CHKERRQ(ierr);
-    ierr = DMProjectCoordinates(dm, fe_coord_new); CHKERRQ(ierr);
-    ierr = PetscFEDestroy(&fe_coord_new); CHKERRQ(ierr);
-  }
-  if (0) {
+  {
     // create FE field for coordinates
     PetscFE fe_coords;
     PetscInt num_comp_coord;

@@ -385,51 +385,26 @@ static PetscErrorCode Run(RunParams rp, PetscInt num_resources,
 
   PetscFunctionBeginUser;
   // Setup DM
-  //if (0) {
-  //  if (rp->read_mesh) {
-  //    ierr = DMPlexCreateFromFile(PETSC_COMM_WORLD, rp->filename, NULL, PETSC_TRUE,
-  //                                &dm);
-  //    CHKERRQ(ierr);
-  //  } else {
-  //    if (rp->user_l_nodes) {
-  //      // Find a nicely composite number of elements no less than global nodes
-  //      PetscMPIInt size;
-  //      ierr = MPI_Comm_size(rp->comm, &size); CHKERRQ(ierr);
-  //      for (PetscInt g_elem =
-  //             PetscMax(1, size * rp->local_nodes / PetscPowInt(rp->degree, rp->dim));
-  //           ;
-  //           g_elem++) {
-  //        Split3(g_elem, rp->mesh_elem, true);
-  //        if (Max3(rp->mesh_elem) / Min3(rp->mesh_elem) <= 2) break;
-  //      }
-  //    }
-  //    ierr = DMPlexCreateBoxMesh(PETSC_COMM_WORLD, rp->dim, PETSC_FALSE,
-  //                               rp->mesh_elem,
-  //                               NULL, NULL, NULL, PETSC_TRUE, &dm); CHKERRQ(ierr);
-  //    ierr = DMViewFromOptions(dm, NULL, "-dm_view"); CHKERRQ(ierr);
-  //  }
-  //}
-  // To check if the DMPlexCreateBoxMesh is the issue
-  // Block 1
-  if (1) {
-    // Create DMPLEX
-    ierr = DMCreate(rp->comm, &dm); CHKERRQ(ierr);
-    ierr = DMSetType(dm, DMPLEX); CHKERRQ(ierr);
-    // Set Tensor elements
-    ierr = PetscOptionsSetValue(NULL, "-dm_plex_simplex", "0"); CHKERRQ(ierr);
-    ierr = PetscOptionsSetValue(NULL, "-dm_plex_dim", "3"); CHKERRQ(ierr);
-    ierr = PetscOptionsSetValue(NULL, "-dm_plex_box_faces", "8,8,8"); CHKERRQ(ierr);
-    // Set CL options
-    ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
-    ierr = DMViewFromOptions(dm, NULL, "-dm_view"); CHKERRQ(ierr);
-  }
-  // Block 2
-  if (0) {
-    // Create DMPLEX
-    PetscInt faces[3] = {8,8,8};
-    ierr = DMPlexCreateBoxMesh(rp->comm, rp->dim, PETSC_FALSE, faces,
+  if (rp->read_mesh) {
+    ierr = DMPlexCreateFromFile(PETSC_COMM_WORLD, rp->filename, NULL, PETSC_TRUE,
+                                &dm);
+    CHKERRQ(ierr);
+  } else {
+    if (rp->user_l_nodes) {
+      // Find a nicely composite number of elements no less than global nodes
+      PetscMPIInt size;
+      ierr = MPI_Comm_size(rp->comm, &size); CHKERRQ(ierr);
+      for (PetscInt g_elem =
+             PetscMax(1, size * rp->local_nodes / PetscPowInt(rp->degree, rp->dim));
+           ;
+           g_elem++) {
+        Split3(g_elem, rp->mesh_elem, true);
+        if (Max3(rp->mesh_elem) / Min3(rp->mesh_elem) <= 2) break;
+      }
+    }
+    ierr = DMPlexCreateBoxMesh(PETSC_COMM_WORLD, rp->dim, PETSC_FALSE,
+                               rp->mesh_elem,
                                NULL, NULL, NULL, PETSC_TRUE, &dm); CHKERRQ(ierr);
-    ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
     ierr = DMViewFromOptions(dm, NULL, "-dm_view"); CHKERRQ(ierr);
   }
 

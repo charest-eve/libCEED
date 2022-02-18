@@ -5,7 +5,6 @@
 #SBATCH -p test.q
 #SBATCH -t 00:03:00
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=24
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=qnrn96@durham.ac.uk
 

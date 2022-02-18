@@ -3,7 +3,7 @@
 #SBATCH -o myjob.%A.out
 #SBATCH -e myjob.%A.err
 #SBATCH -p test.q
-#SBATCH -t 00:05:00
+#SBATCH -t 00:03:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=24
 #SBATCH --mail-type=ALL

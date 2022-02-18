@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name="myjob"
-#SBATCH -o myjob.%A.out
-#SBATCH -e myjob.%A.err
+#SBATCH --job-name="bp1_refserial_degree"
+#SBATCH -o bp1_refserial_degree.out
+#SBATCH -e bp1_refserial_degree.err
 #SBATCH -p test.q
 #SBATCH -t 00:03:00
 #SBATCH --nodes=1

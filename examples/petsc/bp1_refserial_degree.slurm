@@ -18,6 +18,6 @@ export PETSC_ARCH=arch-linux2-c-opt
 
 for n in $(seq 1 16)
 do
-    solve_time=$(./bpsraw -problem bp1 -degree $((n)) -ceed /cpu/self/ref/serial | grep 'CG Solve Time' )
+    solve_time=$(./bpsraw -problem bp1 -degree $((n)) -ceed /cpu/self/ref/serial | grep 'CG Solve Time' | cut -f 2)
     echo $solve_time
 done

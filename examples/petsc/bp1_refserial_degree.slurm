@@ -21,3 +21,9 @@ do
     solve_time=$(./bpsraw -problem bp1 -degree $((n)) -ceed /cpu/self/ref/serial | grep 'CG Solve Time' | cut -f 2)
     echo $n $solve_time
 done
+
+for l in $(1000 2000 4000 10000 20000 30000 50000 80000 100000 200000 300000 400000 500000)
+do
+    solve_time=$(./bpsraw -problem bp1 -local $((l)) -ceed /cpu/self/ref/serial | grep 'CG Solve Time' | cut -f 2)
+    echo $l $solve_time
+done

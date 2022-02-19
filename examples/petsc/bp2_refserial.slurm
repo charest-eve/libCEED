@@ -3,7 +3,7 @@
 #SBATCH -o bp2_refserial.out
 #SBATCH -e bp2_refserial.err
 #SBATCH -p test.q
-#SBATCH -t 00:05:00
+#SBATCH -t 00:10:00
 #SBATCH --nodes=1
 
 source /etc/profile.d/modules.sh

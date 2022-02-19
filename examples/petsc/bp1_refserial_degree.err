@@ -1,2 +1,2 @@
-/tmp/slurmd/job4591238/slurm_script: command substitution: line 22: syntax error near unexpected token `)'
-/tmp/slurmd/job4591238/slurm_script: command substitution: line 22: `./bpsraw -problem bp1 -degree $(n) -ceed /cpu/self/ref/serial | grep CG Solve Time |)'
+/tmp/slurmd/job4591239/slurm_script: command substitution: line 22: syntax error near unexpected token `)'
+/tmp/slurmd/job4591239/slurm_script: command substitution: line 22: `./bpsraw -problem bp1 -degree $((n)) -ceed /cpu/self/ref/serial | grep CG Solve Time |)'

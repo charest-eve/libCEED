@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name="bp1_refblocked"
-#SBATCH -o bp1_refblocked.out
-#SBATCH -e bp1_refblocked.err
+#SBATCH --job-name="bp2_optserial"
+#SBATCH -o bp2_optserial.out
+#SBATCH -e bp2_optserial.err
 #SBATCH -p test.q
 #SBATCH -t 00:10:00
 #SBATCH --nodes=1

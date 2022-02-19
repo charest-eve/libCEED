@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name="bp2_refblocked"
-#SBATCH -o bp2_refblocked.out
-#SBATCH -e bp2_refblocked.err
+#SBATCH --job-name="bp1_optblocked"
+#SBATCH -o bp1_optblocked.out
+#SBATCH -e bp1_optblocked.err
 #SBATCH -p test.q
 #SBATCH -t 00:10:00
 #SBATCH --nodes=1
@@ -18,12 +18,12 @@ export PETSC_ARCH=arch-linux2-c-opt
 
 for n in $(seq 1 16)
 do
-    solve_time=$(./bpsraw -problem bp2 -degree $((n)) -ceed /cpu/self/ref/blocked | grep 'CG Solve Time' | cut -f 2)
+    solve_time=$(./bpsraw -problem bp1 -degree $((n)) -ceed /cpu/self/opt/blocked | grep 'CG Solve Time' | cut -f 2)
     echo $n $solve_time
 done
 
 for l in $(seq 1000 10000 500000)
 do
-    solve_time=$(./bpsraw -problem bp2 -local $((l)) -ceed /cpu/self/ref/blocked | grep 'CG Solve Time' | cut -f 2)
+    solve_time=$(./bpsraw -problem bp1 -local $((l)) -ceed /cpu/self/opt/blocked | grep 'CG Solve Time' | cut -f 2)
     echo $l $solve_time
 done

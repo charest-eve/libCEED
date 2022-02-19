@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name="bp1_refserial_degree"
-#SBATCH -o bp1_refserial_degree.out
-#SBATCH -e bp1_refserial_degree.err
+#SBATCH --job-name="bp1_refserial"
+#SBATCH -o bp1_refserial.out
+#SBATCH -e bp1_refserial.err
 #SBATCH -p test.q
-#SBATCH -t 00:03:00
+#SBATCH -t 00:05:00
 #SBATCH --nodes=1
 
 source /etc/profile.d/modules.sh

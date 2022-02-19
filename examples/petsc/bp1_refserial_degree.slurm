@@ -16,4 +16,8 @@ module load likwid/5.0.1
 export PETSC_DIR=/ddn/data/vtdb72/petsc
 export PETSC_ARCH=arch-linux2-c-opt
 
-./bpsraw -problem bp1
+for n in $(seq 1 16)
+do
+    solve_time = $(./bpsraw -problem bp1 -degree $(n) -ceed /cpu/self/ref/serial | grep CG Solve Time |)
+    echo $solve_time
+done

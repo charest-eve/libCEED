@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name="bp2_refserial"
-#SBATCH -o bp2_refserial.out
-#SBATCH -e bp2_refserial.err
+#SBATCH --job-name="ref_parallel"
+#SBATCH -o ref_parallel.out
+#SBATCH -e ref_parallel.err
 #SBATCH -p test.q
 #SBATCH -t 00:10:00
 #SBATCH --nodes=1
@@ -16,14 +16,14 @@ module load likwid/5.0.1
 export PETSC_DIR=/ddn/data/vtdb72/petsc
 export PETSC_ARCH=arch-linux2-c-opt
 
-for n in $(seq 1 16)
+for n in $(seq 1 20)
 do
-    solve_time=$(./bpsraw -problem bp2 -degree $((n)) -ceed /cpu/self/ref/serial | grep 'CG Solve Time' | cut -f 2)
+    solve_time=$(mpiexec -n $((n)) ./bpsraw -problem bp1 -ceed /cpu/self/ref/blocked | grep 'CG Solve Time' | cut -f 2)
     echo $n $solve_time
 done
 
-for l in $(seq 1000 10000 500000)
+for n in $(seq 1 20)
 do
-    solve_time=$(./bpsraw -problem bp2 -local $((l)) -ceed /cpu/self/ref/serial | grep 'CG Solve Time' | cut -f 2)
-    echo $l $solve_time
+    solve_time=$(mpiexec -n $((n)) ./bpsraw -problem bp2 -ceed /cpu/self/ref/blocked | grep 'CG Solve Time' | cut -f 2)
+    echo $n $solve_time
 done

@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name="avxb_parallel"
-#SBATCH -o avxb_parallel.out
-#SBATCH -e avxb_parallel.err
+#SBATCH --job-name="avxs_parallel"
+#SBATCH -o avxs_parallel.out
+#SBATCH -e avxs_parallel.err
 #SBATCH -p test.q
 #SBATCH -t 00:10:00
 #SBATCH --nodes=1
